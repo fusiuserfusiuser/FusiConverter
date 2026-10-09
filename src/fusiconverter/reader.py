@@ -9,6 +9,7 @@ import numpy as np
 from pathlib import Path
 
 from .utils import load_atlas_image, load_mat_image, prepare_image_for_layer
+from .viewer_ops import load_transform_matrix, put_transform_matrix_in_layer_affine
 
 
 def napari_get_reader(path):
@@ -20,6 +21,15 @@ def napari_get_reader(path):
         return read_mat
     return None
 
+def _saved_alignment_affine(source_path, ndim, spatial_axes=(0, 1, 2)):
+    """Affine from <source>.alignment.json (maps to Allen CCF mm), or None if there is no saved alignment."""
+    alignment_path = Path(f'{source_path}.alignment.json')
+    if not alignment_path.exists():
+        return None
+    alignment = load_transform_matrix(alignment_path)
+    print(f'Applied saved alignment to {Path(source_path).name}')
+    return put_transform_matrix_in_layer_affine(alignment['transform_matrix'], ndim, spatial_axes)
+
 def read_mat(mat_path):
     image, voxel_size, _origin, image_name = load_mat_image(mat_path)
 
@@ -29,6 +39,9 @@ def read_mat(mat_path):
         'scale': scale,
         'metadata': {'source_path': str(mat_path), 'spatial_axes': spatial_axes},
     }
+    affine = _saved_alignment_affine(mat_path, image.ndim, spatial_axes)
+    if affine is not None:
+        kwargs['affine'] = affine
 
     return [(image, kwargs, 'image')]
 
@@ -41,4 +54,9 @@ def read_atlas(atlas_path):
         'blending': 'additive',
         'metadata': {'source_path': str(atlas_path)},
     }
+    # the Allen atlas is the reference frame, so its own alignment file is ignored
+    if Path(atlas_path).parent.name != 'Allen_CCF':
+        affine = _saved_alignment_affine(atlas_path, image.ndim)
+        if affine is not None:
+            kwargs['affine'] = affine
     return [(image, kwargs, 'image')]  # napari expects a list of layers
