@@ -7,6 +7,7 @@ in mm, on the same grid as the recording.
 
 import numpy as np
 from pathlib import Path
+from qtpy.QtWidgets import QMessageBox
 
 from .utils import load_atlas_image, load_mat_image, prepare_image_for_layer
 from .viewer_ops import load_transform_matrix, put_transform_matrix_in_layer_affine
@@ -22,9 +23,17 @@ def napari_get_reader(path):
     return None
 
 def _saved_alignment_affine(source_path, ndim, spatial_axes=(0, 1, 2)):
-    """Affine from <source>.alignment.json (maps to Allen CCF mm), or None if there is no saved alignment."""
+    """Affine from <source>.alignment.json (maps to Allen CCF mm), or None if there is none or the user declines."""
     alignment_path = Path(f'{source_path}.alignment.json')
     if not alignment_path.exists():
+        return None
+    answer = QMessageBox.question(
+        None, 'Apply saved alignment?',
+        f'{Path(source_path).name} has a saved alignment to the Allen atlas.\n\n'
+        'Apply it now? The layer will line up with the Allen atlas in 3D, but it will be '
+        'rotated, so it can no longer be viewed slice-by-slice in 2D.\n\n'
+        'Choose No to view it unaligned (2D slices work as normal).')
+    if answer != QMessageBox.Yes:
         return None
     alignment = load_transform_matrix(alignment_path)
     print(f'Applied saved alignment to {Path(source_path).name}')
