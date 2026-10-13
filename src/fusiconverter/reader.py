@@ -1,8 +1,7 @@
 """Napari reader for Allen CCF NIfTI atlases.
 
-Registered as a napari plugin (see `napari.yaml`) so that opening an atlas from
-File -> Open File(s) scales it the same way `view_mat_in_napari.py` does, i.e.
-in mm, on the same grid as the recording.
+Registered as a napari plugin (see `napari.yaml`) so that atlases can be opened from
+File -> Open File(s) and scaled to match the recorded fUSI data, if needed.
 """
 
 import numpy as np
@@ -23,14 +22,14 @@ def napari_get_reader(path):
     return None
 
 def _saved_alignment_affine(source_path, ndim, spatial_axes=(0, 1, 2)):
-    """Affine from <source>.alignment.json (maps to Allen CCF mm), or None if there is none or the user declines."""
+    """Affine from <source>.alignment.json (maps to the vascular reference atlas's mm), or None if there is none or the user declines."""
     alignment_path = Path(f'{source_path}.alignment.json')
     if not alignment_path.exists():
         return None
     answer = QMessageBox.question(
         None, 'Apply saved alignment?',
-        f'{Path(source_path).name} has a saved alignment to the Allen atlas.\n\n'
-        'Apply it now? The layer will line up with the Allen atlas in 3D, but it will be '
+        f'{Path(source_path).name} has a saved alignment to the vascular reference atlas.\n\n'
+        'Apply it now? The layer will line up with the vascular reference atlas in 3D, but it will be '
         'rotated, so it can no longer be viewed slice-by-slice in 2D.\n\n'
         'Choose No to view it unaligned (2D slices work as normal).')
     if answer != QMessageBox.Yes:
@@ -63,8 +62,8 @@ def read_atlas(atlas_path):
         'blending': 'additive',
         'metadata': {'source_path': str(atlas_path)},
     }
-    # the Allen atlas is the reference frame, so its own alignment file is ignored
-    if Path(atlas_path).parent.name != 'Allen_CCF':
+    # the vascular atlas is the reference frame, so only the Allen atlas gets moved onto it
+    if Path(atlas_path).parent.name == 'Allen_CCF':
         affine = _saved_alignment_affine(atlas_path, image.ndim)
         if affine is not None:
             kwargs['affine'] = affine
