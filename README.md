@@ -10,54 +10,76 @@ Everything happens in [Napari](https://napari.org), an image viewer, with a few 
 1. Double-click `install_uv.bat`. This installs **uv**, the tool that downloads everything else the program needs.
 2. Close the window when it says it's done.
 
-## Starting the program
+## Start the program
 
 Double-click `launch_napari_with_widgets.bat`.
 
-## Opening files
+## Load files
 
-In Naparie, use **File → Open File(s)** to open:
+In Napari, use **File → Open File(s)** to open:
 
 - **Recordings**: the `.mat` files from the fUSI system.
 - **Atlases**: `.nii` or `.nii.gz` files, e.g. the Allen atlas.
 
-## Typical workflow
+## Typical workflow for registration
 
-The panels on the right are used roughly from top to bottom.
+### 1. Download atlases and recording files from Sciebo
 
-### 1. Place landmarks (*Add Landmark* panel)
+All files you need are currently in fusi/03_Data. You can place the data wherever you want on your computer, but the recommended location is next to (not inside) the FusiConverter repository.
+
+1. Atlases are found in 00_ReferenceAtlas
+    - Download the folder named Allen_CCF to get the Allen Atlas.
+    - Download the folder named Keliris_vasc_atlas to get the vascular atlas.
+2. Download the data from the session you want to register. Registration is done on the HQ (high quality - higher resolution) file when it is available.
+    - Recommended organization: Put metadata (.csv files) in a separate folder and put HQ files and trial recordings (T*.mat files) in another folder inside each session folder.
+
+
+### 2. Load files
+
+1. Load the atlases using **File → Open File(s)** in Napari.
+    - The Allen atlas file to load is named **average_template_50.nii**
+    - The Vascular atlas file to load is named **VascularProbabilisticAtlas.nii**
+    - If you downloaded the whole atlas folders from Sciebo, an `alignment.json` and `landmarks.json` should be included in the folders. When you load the Allen atlas, you will be asked whether you want to apply the saved alignment. Click "Yes"
+      - Only reason not to apply the saved alignment is if you need to do it again.
+2. Load the HQ file recorded in the session using **File → Open File(s)** in Napari.
+    - If an alignment has already been done and an `alignment.json` has been saved for this session, you will be asked if you want to apply the saved alignment.
+
+**Note: If the recording has already been aligned for the session you want to register, you can skip to point 6.**
+
+### 3. Place landmarks (*Add Landmark* panel)
 
 Landmarks are points you can recognise in both the recording and the atlas (e.g. a specific blood vessel or structure).
 
 1. Pick the layer (recording or atlas) under **Target Image Layer**.
-2. Type a name under **Landmark Name** and click **Add Landmark**.
+2. Type a name under **Landmark Name** and click **Add Landmark**. 
+    - Currently used landmark namems are **"DA", "DP", "VL", and "VR"**, which stand for "Dorsal Anterior", "Dorsal Posterior", "Ventral Left", and "Ventral Right". If you set the VascularProbabilisticAtlas to be the **Target Image Layer** and click **Load Existing Landmarks**, you can see where they should be placed.
 3. Click on the image to place the landmark.
 4. Repeat for the same landmark on the other layer, **using the exact same name** (capitalization matters). If you have already placed landmarks on the recording, the other layer means the atlas, and vice versa.
 5. Click **Save Landmarks**. They're stored next to the original file, so you can reload them later with **Load Existing Landmarks**.
 
 You need **at least 3** landmarks with matching names on both layers. More landmarks give a better fit.
 
-### 2. Align to the atlas (*Alignment* panel)
+### 4. Align to the atlas (*Alignment* panel)
 
 1. Choose the recording as **Layer to be moved** and the atlas as **Fixed layer**.
 2. Click **Align to Atlas**. The recording moves, turns and resizes so its landmarks line up with the atlas landmarks.
 3. Click **Save Alignment Matrix** to keep the resulting transformation matrix, which can be applied to other images in the future.
 
-### 3. Fine-tune by hand (*Manual Alignment* panel), optional
+### 5. Fine-tune by hand (*Manual Alignment* panel), optional
 
 Use this to fine-tune the alignment after the automatic fit using landmarks.
 
 - **Translate**: shifts the recording (in mm).
 - **Rotate**: turns it (in degrees).
 - **Scale**: stretches or squeezes it (1 = unchanged).
-- **Drag mode (3D)**: move the recording with the mouse instead. **Note**: You need to click it again to deactivate drag mode when you don't want to move the recording anymore.
+- ** (OPTIONAL) Drag mode (3D)**: move the recording with the mouse instead. **Note**: You need to click it again to deactivate drag mode when you don't want to move the recording anymore.
   - Drag: shift
   - Shift + drag: tilt
   - Ctrl + drag: spin
 - **Reset**: undoes your manual changes.
 - **Save Alignment Matrix**: saves the result (this replaces any earlier saved transformation matrix).
 
-### 4. Label brain areas (*Register to Atlas Areas* panel)
+### 6. Label brain areas (*Register to Atlas Areas* panel)
 
 1. Choose the aligned recording and click **Register to Atlas Areas**.
 2. When asked, pick the Allen **annotation** file (click on the folder named "annotation") at the same resolution as the atlas you aligned to (e.g. `annotation_50.nii.gz`). The file `allen_mouse_connectivity_structure_graph.csv` must be in the same folder.
