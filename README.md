@@ -19,7 +19,7 @@ Double-click `launch_napari_with_widgets.bat`.
 In Napari, use **File → Open File(s)** to open:
 
 - **Recordings**: the `.mat` files from the fUSI system.
-- **Atlases**: `.nii` or `.nii.gz` files, e.g. the Allen atlas.
+- **Atlases**: `.nii` or `.nii.gz` files, e.g. the Allen atlas. The Allen and vascular atlases load automatically on startup if the data folder is next to the FusiConverter folder (see step 2 below).
 
 ## Typical workflow for registration
 
@@ -36,11 +36,11 @@ All files you need are currently in fusi/03_Data. You can place the data whereve
 
 ### 2. Load files
 
-1. Load the atlases using **File → Open File(s)** in Napari.
-    - The Allen atlas file to load is named **average_template_50.nii**
-    - The Vascular atlas file to load is named **VascularProbabilisticAtlas.nii**
-    - If you downloaded the whole atlas folders from Sciebo, an `alignment.json` and `landmarks.json` should be included in the folders. When you load the Allen atlas, you will be asked whether you want to apply the saved alignment. Click "Yes"
-      - Only reason not to apply the saved alignment is if you need to do it again.
+1. The atlases load automatically when Napari starts, if the data folder is placed next to the FusiConverter folder (the recommended location in step 1).
+    - The Allen atlas (**average_template_50.nii.gz**) and the vascular atlas (**VascularProbabilisticAtlas.nii**) are loaded.
+    - If you downloaded the whole atlas folders from Sciebo, an `alignment.json` and `landmarks.json` should be included in the folders, and the saved alignment is applied to the Allen atlas automatically.
+    - If your data is somewhere else, load the atlases yourself using **File → Open File(s)**. When you load the Allen atlas this way, you will be asked whether you want to apply the saved alignment. Click "Yes".
+      - The only reason not to apply the saved alignment is if you need to redo it. To redo it, remove the Allen atlas layer and open it again with **File → Open File(s)**, then click "No".
 2. Load the HQ file recorded in the session using **File → Open File(s)** in Napari.
     - If an alignment has already been done and an `alignment.json` has been saved for this session, you will be asked if you want to apply the saved alignment.
 
