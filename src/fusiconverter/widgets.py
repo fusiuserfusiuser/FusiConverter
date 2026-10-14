@@ -595,6 +595,16 @@ class RegisterToAreasWidget(QWidget):
             )
             return
 
+        allen_transform_matrix = self._get_allen_transform_matrix()
+        if allen_transform_matrix is None:
+            self._report(
+                "Open the Allen atlas (from the Allen_CCF folder) and apply its saved alignment "
+                "before registering, so the areas follow the aligned Allen atlas."
+            )
+            return
+        # recording mm -> vascular atlas mm -> Allen mm, since the annotation is in Allen space
+        transform_matrix = np.linalg.inv(allen_transform_matrix) @ transform_matrix
+
         annotation_path = prompt_load_annotation()
         if not annotation_path:
             self._report("No annotation file selected. Registration skipped.")
@@ -629,6 +639,16 @@ class RegisterToAreasWidget(QWidget):
         if np.allclose(layer_affine, np.eye(image_layer.ndim + 1)):
             return None
         return get_transform_matrix_from_layer_affine(layer_affine, spatial_axes)
+
+    def _get_allen_transform_matrix(self):
+        """Matrix that moved the Allen atlas onto the vascular atlas (from its layer in the viewer), or None if no aligned Allen layer is open."""
+        for layer in self.viewer.layers:
+            source_path = layer.metadata.get('source_path')
+            if isinstance(layer, napari.layers.Image) and source_path and Path(source_path).parent.name == 'Allen_CCF':
+                transform_matrix = self._get_transform_matrix(layer, (0, 1, 2))
+                if transform_matrix is not None:
+                    return transform_matrix
+        return None
 
     def _add_labels_layer(self, image_layer, labels, structures, annotation_path):
         "Put the structure ids on screen in colours on top of the recording"
