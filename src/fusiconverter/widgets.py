@@ -29,6 +29,20 @@ import sys
 from pathlib import Path
 from napari.utils.colormaps import DirectLabelColormap
 
+
+def _hq_layer_name(viewer, event):
+    """Name of the HQ image layer to select by default: the one just added, or on startup (no event) the first one already open"""
+    if event is None:
+        layers = viewer.layers
+    elif event.type == 'inserted':
+        layers = [event.value]
+    else:
+        layers = []
+    for layer in layers:
+        if isinstance(layer, napari.layers.Image) and 'hq' in layer.name.lower():
+            return layer.name
+    return None
+
 class AddLandmark(QWidget):
     def __init__(self, viewer):
         super().__init__()
@@ -63,7 +77,7 @@ class AddLandmark(QWidget):
         self.layout().addWidget(self.status_label)
 
 
-    def _refresh_layer_choices(self):
+    def _refresh_layer_choices(self, event=None):
         """Used to refresh widget when a new layer is added or removed in napari so that it shows up in dropdown menu where you pick a layer to add the landmark to"""
         current = self.layer_landmarks_added.currentText()
         image_layer_names = [layer.name for layer in self.viewer.layers if isinstance(layer, napari.layers.Image)]
@@ -72,6 +86,9 @@ class AddLandmark(QWidget):
         self.layer_landmarks_added.addItems(image_layer_names)
         if current in image_layer_names:
             self.layer_landmarks_added.setCurrentText(current)
+        hq_name = _hq_layer_name(self.viewer, event)
+        if hq_name:
+            self.layer_landmarks_added.setCurrentText(hq_name)
         self.layer_landmarks_added.blockSignals(False)
 
     def add_landmark(self):
@@ -164,7 +181,7 @@ class AlignmentWidget(QWidget):
         self.viewer = viewer
         self.setLayout(QVBoxLayout())
 
-        self.layout().addWidget(QLabel('Layer to be moved (HQ file)'))
+        self.layout().addWidget(QLabel('Layer to be moved'))
         self.moving_layer = QComboBox()
         self.layout().addWidget(self.moving_layer)
 
@@ -190,7 +207,7 @@ class AlignmentWidget(QWidget):
 
         self._last_alignment = None
 
-    def _refresh_layer_choices(self):
+    def _refresh_layer_choices(self, event=None):
         """Used to refresh widget when a new layer is added or removed in napari so that it shows up in dropdown menu where you pick a layer to add the landmark to"""
         image_layer_names = [layer.name for layer in self.viewer.layers if isinstance(layer, napari.layers.Image)]
         for hq_and_atlas in (self.moving_layer, self.fixed_layer):
@@ -201,6 +218,9 @@ class AlignmentWidget(QWidget):
             if current in image_layer_names:
                 hq_and_atlas.setCurrentText(current)
             hq_and_atlas.blockSignals(False)
+        hq_name = _hq_layer_name(self.viewer, event)
+        if hq_name:
+            self.moving_layer.setCurrentText(hq_name)
 
     def align(self):
         moving_layer_name = self.moving_layer.currentText()
@@ -322,7 +342,7 @@ class ManualAlignmentWidget(QWidget):
         self.viewer = viewer
         self.setLayout(QVBoxLayout())
 
-        self.layout().addWidget(QLabel('Layer to adjust (HQ file)'))
+        self.layout().addWidget(QLabel('Layer to adjust'))
         self.layer_choice = QComboBox()
         self.layer_choice.currentTextChanged.connect(self._on_layer_changed)
         self.layout().addWidget(self.layer_choice)
@@ -374,7 +394,7 @@ class ManualAlignmentWidget(QWidget):
         self.viewer.layers.events.inserted.connect(self._refresh_layer_choices)
         self.viewer.layers.events.removed.connect(self._refresh_layer_choices)
 
-    def _refresh_layer_choices(self):
+    def _refresh_layer_choices(self, event=None):
         image_layer_names = [layer.name for layer in self.viewer.layers if isinstance(layer, napari.layers.Image)]
         current = self.layer_choice.currentText()
         self.layer_choice.blockSignals(True)
@@ -382,6 +402,9 @@ class ManualAlignmentWidget(QWidget):
         self.layer_choice.addItems(image_layer_names)
         if current in image_layer_names:
             self.layer_choice.setCurrentText(current)
+        hq_name = _hq_layer_name(self.viewer, event)
+        if hq_name:
+            self.layer_choice.setCurrentText(hq_name)
         self.layer_choice.blockSignals(False)
         if self.layer_choice.currentText() != current:
             self._on_layer_changed()
@@ -565,7 +588,7 @@ class RegisterToAreasWidget(QWidget):
         self.status_label.setWordWrap(True)
         self.layout().addWidget(self.status_label)
 
-    def _refresh_layer_choices(self):
+    def _refresh_layer_choices(self, event=None):
         """Used to refresh widget when a new layer is added or removed in napari so that it shows up in the dropdown menu"""
         current = self.image_layer.currentText()
         image_layer_names = [layer.name for layer in self.viewer.layers if isinstance(layer, napari.layers.Image)]
@@ -574,6 +597,9 @@ class RegisterToAreasWidget(QWidget):
         self.image_layer.addItems(image_layer_names)
         if current in image_layer_names:
             self.image_layer.setCurrentText(current)
+        hq_name = _hq_layer_name(self.viewer, event)
+        if hq_name:
+            self.image_layer.setCurrentText(hq_name)
         self.image_layer.blockSignals(False)
 
     def register(self):
