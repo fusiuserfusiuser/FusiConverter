@@ -21,19 +21,20 @@ def napari_get_reader(path):
         return read_mat
     return None
 
-def _saved_alignment_affine(source_path, ndim, spatial_axes=(0, 1, 2)):
+def _saved_alignment_affine(source_path, ndim, spatial_axes=(0, 1, 2), ask=True):
     """Affine from <source>.alignment.json (maps to the vascular reference atlas's mm), or None if there is none or the user declines."""
     alignment_path = Path(f'{source_path}.alignment.json')
     if not alignment_path.exists():
         return None
-    answer = QMessageBox.question(
-        None, 'Apply saved alignment?',
-        f'{Path(source_path).name} has a saved alignment to the vascular reference atlas.\n\n'
-        'Apply it now? The layer will line up with the vascular reference atlas in 3D, but it will be '
-        'rotated, so it can no longer be viewed slice-by-slice in 2D.\n\n'
-        'Choose No to view it unaligned (2D slices work as normal).')
-    if answer != QMessageBox.Yes:
-        return None
+    if ask:
+        answer = QMessageBox.question(
+            None, 'Apply saved alignment?',
+            f'{Path(source_path).name} has a saved alignment to the vascular reference atlas.\n\n'
+            'Apply it now? The layer will line up with the vascular reference atlas in 3D, but it will be '
+            'rotated, so it can no longer be viewed slice-by-slice in 2D.\n\n'
+            'Choose No to view it unaligned (2D slices work as normal).')
+        if answer != QMessageBox.Yes:
+            return None
     alignment = load_transform_matrix(alignment_path)
     print(f'Applied saved alignment to {Path(source_path).name}')
     return put_transform_matrix_in_layer_affine(alignment['transform_matrix'], ndim, spatial_axes)
@@ -53,7 +54,7 @@ def read_mat(mat_path):
 
     return [(image, kwargs, 'image')]
 
-def read_atlas(atlas_path):
+def read_atlas(atlas_path, ask=True):
     image, scale = load_atlas_image(atlas_path)
     kwargs = {
         'name': Path(atlas_path).name.rsplit('.nii', 1)[0],
@@ -64,7 +65,7 @@ def read_atlas(atlas_path):
     }
     # the vascular atlas is the reference frame, so only the Allen atlas gets moved onto it
     if Path(atlas_path).parent.name == 'Allen_CCF':
-        affine = _saved_alignment_affine(atlas_path, image.ndim)
+        affine = _saved_alignment_affine(atlas_path, image.ndim, ask=ask)
         if affine is not None:
             kwargs['affine'] = affine
     return [(image, kwargs, 'image')]  # napari expects a list of layers
