@@ -37,3 +37,8 @@ build-backend = "uv_build"
 [tool.uv]
 required-environments = ["sys_platform == 'win32' and platform_machine == 'AMD64'"]
 
+[dependency-groups]
+dev = [
+    "debugpy>=1.8.21",
+]
+
